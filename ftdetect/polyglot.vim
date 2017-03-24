@@ -1007,3 +1007,10 @@ augroup filetypedetect
 " yard:sheerun/vim-yardoc
 augroup END
 
+augroup filetypedetect
+au BufRead,BufNewFile *.fx,*.fxc,*.fxh,*.hlsl setfiletype hlsl
+augroup END
+
+augroup filetypedetect
+au BufRead,BufNewFile *.spzs setfiletype spzs
+augroup END
