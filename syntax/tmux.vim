@@ -19,16 +19,16 @@ if !exists('g:polyglot_disabled') || index(g:polyglot_disabled, 'tmux') == -1
 " - Switch on syntax highlighting by adding "syntax enable" to .vimrc.
 "
 
-if version < 600
+if v:version < 600
 	syntax clear
-elseif exists("b:current_syntax")
+elseif exists('b:current_syntax')
 	finish
 endif
 
 setlocal iskeyword+=-
 syntax case match
 
-syn keyword tmuxAction	any current none
+syn keyword tmuxAction	any current default none
 syn keyword tmuxBoolean	off on
 
 syn keyword tmuxCmds
@@ -52,6 +52,7 @@ syn keyword tmuxCmds
 	\ confirm
 	\ confirm-before
 	\ copy-mode
+	\ copy-mode-vi
 	\ delete-buffer
 	\ deleteb
 	\ detach
@@ -261,24 +262,36 @@ syn keyword tmuxOptsSetw
 	\ force-width
 	\ main-pane-height
 	\ main-pane-width
+	\ message-attr
+	\ message-bg
+	\ message-fg
 	\ mode-keys
 	\ mode-style
 	\ monitor-activity
 	\ monitor-silence
 	\ other-pane-height
 	\ other-pane-width
+	\ pane-active-border-bg
+	\ pane-active-border-fg
 	\ pane-active-border-style
 	\ pane-base-index
+	\ pane-border-fg
 	\ pane-border-style
 	\ remain-on-exit
 	\ synchronize-panes
 	\ window-active-style
+	\ window-status-activity-attr
+	\ window-status-activity-bg
+	\ window-status-activity-fg
 	\ window-status-activity-style
 	\ window-status-bell-style
+	\ window-status-bg
+	\ window-status-current-attr
 	\ window-status-current-bg
 	\ window-status-current-fg
 	\ window-status-current-format
 	\ window-status-current-style
+	\ window-status-fg
 	\ window-status-format
 	\ window-status-last-style
 	\ window-status-separator
@@ -290,7 +303,7 @@ syn keyword tmuxOptsSetw
 syn keyword tmuxTodo FIXME NOTE TODO XXX contained
 
 syn match tmuxKey		/\(C-\|M-\|\^\)\+\S\+/	display
-syn match tmuxNumber 		/\d\+/			display
+syn match tmuxNumber 		/\<\d\+\>/			display
 syn match tmuxOptions		/\s-\a\+/		display
 syn match tmuxVariable		/\w\+=/			display
 syn match tmuxVariableExpansion	/\${\=\w\+}\=/		display
@@ -315,6 +328,6 @@ hi def link tmuxTodo			Todo
 hi def link tmuxVariable		Constant
 hi def link tmuxVariableExpansion	Constant
 
-let b:current_syntax = "tmux"
+let b:current_syntax = 'tmux'
 
 endif

@@ -13,11 +13,7 @@ if exists('b:did_indent')
   finish
 endif
 
-if !exists('g:haskell_indent_disable')
-    let g:haskell_indent_disable = 0
-endif
-
-if g:haskell_indent_disable != 0
+if get(g:, 'haskell_indent_disable', 0)
   finish
 endif
 
@@ -40,7 +36,16 @@ endif
 if !exists('g:haskell_indent_let')
   " let x = 0 in
   " >>>>x
+  "
+  " let x = 0
+  "     y = 1
   let g:haskell_indent_let = 4
+endif
+
+if !exists('g:haskell_indent_let_no_in')
+  " let x = 0
+  "     x
+  let g:haskell_indent_let_no_in = 4
 endif
 
 if !exists('g:haskell_indent_where')
@@ -68,7 +73,7 @@ if !exists('g:haskell_indent_guard')
 endif
 
 setlocal indentexpr=GetHaskellIndent()
-setlocal indentkeys=0},0),0],!^F,o,O,0\=,0=where,0=let,0=deriving,<space>
+setlocal indentkeys=0},0),0],!^F,o,O,0=where,0=let,0=deriving,<space>
 
 function! s:isInBlock(hlstack)
   return index(a:hlstack, 'haskellDelimiter') > -1 || index(a:hlstack, 'haskellParens') > -1 || index(a:hlstack, 'haskellBrackets') > -1 || index(a:hlstack, 'haskellBlock') > -1 || index(a:hlstack, 'haskellBlockComment') > -1 || index(a:hlstack, 'haskellPragma') > -1
@@ -159,15 +164,6 @@ function! GetHaskellIndent()
     return 0
   endif
 
-  " " comment indentation
-  " if l:line =~ '^\s*--'
-  "   let l:s = match(l:prevline, '-- ')
-  "   if l:s > -1
-  " endif
-  " " if l:prevline =~ '^\s*--'
-  " "   return match(l:prevline, '\S')
-  " " endif
-
   "   { foo :: Int
   " >>,
   "
@@ -223,6 +219,9 @@ function! GetHaskellIndent()
   "
   " let x = 1
   " >>>>y = 2
+  "
+  " let x = 1
+  " y 2
   if l:prevline =~ '\C\<let\>\s\+.\+$'
     if l:line =~ '\C^\s*\<let\>'
       let l:s = match(l:prevline, '\C\<let\>')
@@ -234,10 +233,15 @@ function! GetHaskellIndent()
       if s:isSYN('haskellLet', v:lnum - 1, l:s + 1)
         return l:s + g:haskell_indent_in
       endif
-    else
+    elseif l:line =~ '\s=\s'
       let l:s = match(l:prevline, '\C\<let\>')
       if s:isSYN('haskellLet', v:lnum - 1, l:s + 1)
         return l:s + g:haskell_indent_let
+      endif
+    else
+      let l:s = match(l:prevline, '\C\<let\>')
+      if s:isSYN('haskellLet', v:lnum - 1, l:s + 1)
+        return l:s + g:haskell_indent_let_no_in
       endif
     endif
   endif
@@ -258,12 +262,16 @@ function! GetHaskellIndent()
   " where
   " >>foo
   "
+  if l:prevline =~ '\C\<where\>\s*$'
+    return match(l:prevline, '\S') + get(g:, 'haskell_indent_after_bare_where', &shiftwidth)
+  endif
+
   " do
   " >>foo
   "
   " foo =
   " >>bar
-  if l:prevline =~ '\C\(\<where\>\|\<do\>\|=\)\s*$'
+  if l:prevline =~ '\C\(\<do\>\|=\)\s*$'
     return match(l:prevline, '\S') + &shiftwidth
   endif
 
@@ -279,7 +287,7 @@ function! GetHaskellIndent()
   " case foo of
   " >>bar -> quux
   if l:prevline =~ '\C\<case\>.\+\<of\>\s*$'
-    if exists('g:haskell_indent_case_alternative') && g:haskell_indent_case_alternative
+    if get(g:,'haskell_indent_case_alternative', 0)
       return match(l:prevline, '\S') + &shiftwidth
     else
       return match(l:prevline, '\C\<case\>') + g:haskell_indent_case
@@ -288,9 +296,20 @@ function! GetHaskellIndent()
 
   "" where foo
   "" >>>>>>bar
+  ""
+  "" where foo :: Int
+  "" >>>>>>>>>>-> Int
+  ""
+  "" where foo x
+  "" >>>>>>>>|
   if l:prevline =~ '\C\<where\>\s\+\S\+.*$'
     if  l:line =~ '^\s*[=-]>\s' && l:prevline =~ ' :: '
       return match(l:prevline, ':: ')
+    elseif  l:line =~ '^\s*|\s'
+      let l:s = match(l:prevline, '\C\<where\>')
+      if s:isSYN('haskellWhere', v:lnum - 1, l:s + 1)
+        return l:s + g:haskell_indent_where + g:haskell_indent_guard
+      endif
     else
       let l:s = match(l:prevline, '\C\<where\>')
       if s:isSYN('haskellWhere', v:lnum - 1, l:s + 1)
@@ -321,38 +340,50 @@ function! GetHaskellIndent()
 
   " foo :: Int
   "     -> Int
+  " >>>>-> Int
+  "
+  " foo :: Monad m
+  "     => Functor f
+  " >>>>=> Int
+  "
+  " foo :: Int
+  "     -> Int
   " foo x
   "
   " foo
   "   :: Int
   "   -> Int
   " foo x
-  if l:prevline =~ '^\s*[-=]>' && l:line !~ '^\s*[-=]>'
-    if s:isInBlock(l:hlstack)
-      return match(l:prevline, '[^\s-=>]')
+  if l:prevline =~ '^\s*[-=]>'
+    if l:line =~ '^\s*[-=]>'
+      return match(l:prevline, '[-=]')
     else
-      let l:m = matchstr(l:line, '^\s*\zs\<\S\+\>\ze')
-      let l:l = l:prevline
-      let l:c = 1
+      if s:isInBlock(l:hlstack)
+        return match(l:prevline, '[^-=]')
+      else
+        let l:m = matchstr(l:line, '^\s*\zs\<\S\+\>\ze')
+        let l:l = l:prevline
+        let l:c = 1
 
-      while v:lnum != l:c
-        " fun decl
-        if l:l =~ ('^\s*' . l:m . '\(\s*::\|\n\s\+::\)')
-          let l:s = match(l:l, l:m)
-          if match(l:l, '\C^\s*\<default\>') > -1
-            return l:s - 8
-          else
-            return l:s
+        while v:lnum != l:c
+          " fun decl
+          if l:l =~ ('^\s*' . l:m . '\(\s*::\|\n\s\+::\)')
+            let l:s = match(l:l, l:m)
+            if match(l:l, '\C^\s*\<default\>') > -1
+              return l:s - 8
+            else
+              return l:s
+            endif
+          " empty line, stop looking
+          elseif l:l =~ '^$'
+             return 0
           endif
-        " empty line, stop looking
-        elseif l:l =~ '^$'
-           return 0
-        endif
-        let l:c += 1
-        let l:l = getline(v:lnum - l:c)
-      endwhile
+          let l:c += 1
+          let l:l = getline(v:lnum - l:c)
+        endwhile
 
-      return 0
+        return 0
+      endif
     endif
   endif
 
@@ -403,12 +434,17 @@ function! GetHaskellIndent()
 
   "  in foo
   " where bar
+  "
+  " or
+  "
+  " foo
+  " >>where
   if l:line =~ '\C^\s*\<where\>'
     if match(l:prevline, '\C^\s\+in\s\+') == 0
       return match(l:prevline, 'in') - g:haskell_indent_in
     endif
 
-    return match(l:prevline, '\S') + &shiftwidth
+    return match(l:prevline, '\S') + get(g:, 'haskell_indent_before_where', &shiftwidth)
   endif
 
   " let x = 1

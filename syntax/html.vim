@@ -106,13 +106,13 @@ syn keyword htmlArg contained form autocomplete autofocus list min max step
 syn keyword htmlArg contained formaction autofocus formenctype formmethod formtarget formnovalidate
 syn keyword htmlArg contained required placeholder pattern
 " <command>, <details>, <time>
-syn keyword htmlArg contained label icon open datetime pubdate
+syn keyword htmlArg contained label icon open datetime-local pubdate
 " <script>
 syn keyword htmlArg contained async
 " <content>
 syn keyword htmlArg contained select
 " <iframe>
-syn keyword htmlArg contained seamless srcdoc sandbox allowfullscreen allowusermedia allowpaymentrequest 
+syn keyword htmlArg contained seamless srcdoc sandbox allowfullscreen allowusermedia allowpaymentrequest allowpresentation
 " <picture>
 syn keyword htmlArg contained srcset sizes
 " <a>
@@ -121,9 +121,13 @@ syn keyword htmlArg contained download media
 syn keyword htmlArg contained nonce
 " <area>, <a>, <img>, <iframe>, <link>
 syn keyword htmlArg contained referrerpolicy
-" <script>
 " https://w3c.github.io/webappsec-subresource-integrity/#the-integrity-attribute
 syn keyword htmlArg contained integrity crossorigin
+" <link>
+syn keyword htmlArg contained prefetch 
+" syn keyword htmlArg contained preload
+" <img>
+syn keyword htmlArg contained decoding
 
 " Custom Data Attributes
 " http://w3c.github.io/html/single-page.html#embedding-custom-non-visible-data-with-the-data-attributes

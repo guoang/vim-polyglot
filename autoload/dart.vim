@@ -24,9 +24,11 @@ function! dart#fmt(q_args) abort
     let joined_lines = system(printf('dartfmt %s', a:q_args), buffer_content)
     if 0 == v:shell_error
       let win_view = winsaveview()
-      silent % delete _
-      silent put=joined_lines
-      silent 1 delete _
+      let lines = split(joined_lines, "\n")
+      silent keepjumps call setline(1, lines)
+      if line('$') > len(lines)
+        silent keepjumps execute string(len(lines)+1).',$ delete'
+      endif
       call winrestview(win_view)
     else
       let errors = split(joined_lines, "\n")[2:]
@@ -148,6 +150,15 @@ function! s:DotPackagesFile() abort
     let dir_path = parent
   endwhile
   return [v:false, '']
+endfunction
+
+" Prevent writes to files in the pub cache.
+function! dart#setModifiable() abort
+  let full_path = expand('%:p')
+  if full_path =~# '.pub-cache' ||
+      \ full_path =~# 'Pub\Cache'
+    setlocal nomodifiable
+  endif
 endfunction
 
 endif

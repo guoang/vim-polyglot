@@ -1,6 +1,6 @@
 if !exists('g:polyglot_disabled') || index(g:polyglot_disabled, 'plantuml') == -1
   
-if exists("b:did_indent")
+if exists('b:did_indent')
   finish
 endif
 let b:did_indent = 1
@@ -9,7 +9,7 @@ setlocal indentexpr=GetPlantUMLIndent()
 setlocal indentkeys=o,O,<CR>,<:>,!^F,0end,0else,}
 
 " only define the indent code once
-if exists("*GetPlantUMLIndent")
+if exists('*GetPlantUMLIndent')
   finish
 endif
 
@@ -19,7 +19,7 @@ let s:incIndent =
       \ '^\s*[hr]\?note\>\%(\%("[^"]*" \<as\>\)\@![^:]\)*$\|' .
       \ '^\s*title\s*$\|' .
       \ '^\s*skinparam\>.*{\s*$\|' .
-      \ '^\s*\%(state\|class\|partition\|rectangle\|enum\|interface\|namespace\)\>.*{'
+      \ '^\s*\%(state\|class\|partition\|rectangle\|enum\|interface\|namespace\|object\)\>.*{'
 
 let s:decIndent = '^\s*\%(end\|else\|}\)'
 

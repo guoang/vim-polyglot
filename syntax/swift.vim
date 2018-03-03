@@ -3,7 +3,6 @@ if !exists('g:polyglot_disabled') || index(g:polyglot_disabled, 'swift') == -1
 " File: swift.vim
 " Author: Keith Smiley
 " Description: Runtime files for Swift
-" Last Modified: June 15, 2014
 
 if exists("b:current_syntax")
   finish
@@ -55,9 +54,11 @@ delfunction s:CommentKeywordMatch
 
 " Literals
 " Strings
-syntax region swiftString start=/"/ skip=/\\\\\|\\"/ end=/"/ contains=swiftInterpolatedWrapper oneline
+syntax region swiftString start=/"/ skip=/\\\\\|\\"/ end=/"/ contains=swiftMultilineInterpolatedWrapper oneline
+syntax region swiftMultilineString start=/"""/ end=/"""/ contains=swiftMultilineInterpolatedWrapper
+syntax region swiftMultilineInterpolatedWrapper start="\v\\\(\s*" end="\v\s*\)" contained containedin=swiftMultilineString contains=swiftInterpolatedString oneline
 syntax region swiftInterpolatedWrapper start="\v[^\\]\zs\\\(\s*" end="\v\s*\)" contained containedin=swiftString contains=swiftInterpolatedString,swiftString oneline
-syntax match swiftInterpolatedString "\v\w+(\(\))?" contained containedin=swiftInterpolatedWrapper oneline
+syntax match swiftInterpolatedString "\v\w+(\(\))?" contained containedin=swiftInterpolatedWrapper,swiftMultilineInterpolatedWrapper oneline
 
 " Numbers
 syntax match swiftNumber "\v<\d+>"
@@ -86,14 +87,13 @@ syntax match swiftOperator "\v\+"
 syntax match swiftOperator "\v\="
 syntax match swiftOperator "\v\|"
 syntax match swiftOperator "\v\/"
-syntax match swiftOperator "\v\."
 syntax match swiftOperator "\v\<"
 syntax match swiftOperator "\v\>"
 syntax match swiftOperator "\v\?\?"
 
 " Methods/Functions/Properties
-syntax match swiftMethod "\(\.\)\@<=\w\+\((\)\@="
-syntax match swiftProperty "\(\.\)\@<=\<\w\+\>(\@!"
+syntax match swiftMethod "\.\@<=\<\D\w*\>\ze("
+syntax match swiftProperty "\.\@<=\<\D\w*\>(\@!"
 
 " Swift closure arguments
 syntax match swiftClosureArgument "\$\d\+\(\.\d\+\)\?"
@@ -152,7 +152,6 @@ syntax keyword swiftKeywords
       \ public
       \ repeat
       \ required
-      \ rethrows
       \ return
       \ self
       \ set
@@ -161,7 +160,6 @@ syntax keyword swiftKeywords
       \ super
       \ switch
       \ throw
-      \ throws
       \ try
       \ typealias
       \ unowned
@@ -170,6 +168,10 @@ syntax keyword swiftKeywords
       \ where
       \ while
       \ willSet
+
+syntax keyword swiftDefinitionModifier
+      \ rethrows
+      \ throws
 
 syntax match swiftMultiwordKeywords "indirect case"
 syntax match swiftMultiwordKeywords "indirect enum"
@@ -186,6 +188,7 @@ syntax keyword swiftAttributes
       \ @available
       \ @convention
       \ @discardableResult
+      \ @escaping
       \ @exported
       \ @IBAction
       \ @IBDesignable
@@ -220,12 +223,13 @@ syntax keyword swiftDebugIdentifier
 
 syntax keyword swiftLineDirective #setline
 
-syntax region swiftTypeWrapper start="\v:\s*" skip="\s*,\s*$*\s*" end="$\|/"me=e-1 contains=ALLBUT,swiftInterpolatedWrapper transparent
+syntax region swiftTypeWrapper start=":\s*\(\.\)\@!\<\u" skip="\s*,\s*$*\s*" end="$\|/"me=e-1 contains=ALLBUT,swiftInterpolatedWrapper,swiftMultilineInterpolatedWrapper transparent
 syntax region swiftTypeCastWrapper start="\(as\|is\)\(!\|?\)\=\s\+" end="\v(\s|$|\{)" contains=swiftType,swiftCastKeyword keepend transparent oneline
 syntax region swiftGenericsWrapper start="\v\<" end="\v\>" contains=swiftType transparent oneline
 syntax region swiftLiteralWrapper start="\v\=\s*" skip="\v[^\[\]]\(\)" end="\v(\[\]|\(\))" contains=ALL transparent oneline
 syntax region swiftReturnWrapper start="\v-\>\s*" end="\v(\{|$)" contains=swiftType transparent oneline
 syntax match swiftType "\v<\u\w*" contained containedin=swiftTypeWrapper,swiftLiteralWrapper,swiftGenericsWrapper,swiftTypeCastWrapper
+syntax match swiftTypeDeclaration /->/ skipwhite nextgroup=swiftType
 
 syntax keyword swiftImports import
 syntax keyword swiftCastKeyword is as contained
@@ -237,6 +241,8 @@ syntax keyword swiftPreprocessor
       \ #else
       \ #endif
       \ #selector
+      \ #warning
+      \ #error
 
 
 " Comment patterns
@@ -254,7 +260,10 @@ highlight default link swiftComment Comment
 highlight default link swiftMarker Comment
 
 highlight default link swiftString String
+highlight default link swiftMultilineString String
 highlight default link swiftInterpolatedWrapper Delimiter
+highlight default link swiftMultilineInterpolatedWrapper Delimiter
+highlight default link swiftTypeDeclaration Delimiter
 highlight default link swiftNumber Number
 highlight default link swiftBoolean Boolean
 
@@ -273,6 +282,7 @@ highlight default link swiftPreprocessor PreProc
 highlight default link swiftMethod Function
 highlight default link swiftProperty Identifier
 
+highlight default link swiftDefinitionModifier Define
 highlight default link swiftConditionStatement PreProc
 highlight default link swiftAvailability Normal
 highlight default link swiftAvailabilityArg Normal
